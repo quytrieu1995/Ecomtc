@@ -1,0 +1,25 @@
+# /etc/systemd/system/ecomtc-wms.service
+#
+# Mặc định: code clone vào /var/www/ql-thuanchay-vn/app
+# Sửa User/Group nếu chạy user khác (vd: ubuntu thay www-data).
+
+[Unit]
+Description=Ecomtc WMS (Next.js standalone)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/ql-thuanchay-vn/app/.deploy
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+EnvironmentFile=-/var/www/ql-thuanchay-vn/app/.env
+ExecStart=/usr/bin/node /var/www/ql-thuanchay-vn/app/.deploy/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
