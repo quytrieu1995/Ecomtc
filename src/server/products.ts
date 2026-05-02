@@ -60,7 +60,8 @@ export const updateProduct = async (id: string, formData: FormData) => {
   }
 }
 
-export const deleteProduct = async (id: string, _formData: FormData) => {
+export const deleteProduct = async (id: string, formData: FormData) => {
+  void formData
   await prisma.product.delete({ where: { id } })
   revalidatePath("/products")
 }

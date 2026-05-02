@@ -124,7 +124,11 @@ export const updateTracking = async (orderId: string, trackingNumber: string) =>
   revalidatePath("/orders")
 }
 
-export const markOrderReturned = async (orderId: string, _formData?: FormData) => {
+export const markOrderReturned = async (
+  orderId: string,
+  formData?: FormData,
+) => {
+  void formData
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: true },
@@ -157,7 +161,8 @@ export const markOrderReturned = async (orderId: string, _formData?: FormData) =
   return { ok: true as const }
 }
 
-export const cancelOrder = async (orderId: string, _formData?: FormData) => {
+export const cancelOrder = async (orderId: string, formData?: FormData) => {
+  void formData
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: true },
