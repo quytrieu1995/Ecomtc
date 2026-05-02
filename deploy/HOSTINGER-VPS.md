@@ -13,10 +13,13 @@ Trên VPS (sau khi [cài Docker Engine](https://docs.docker.com/engine/install/u
 ```bash
 cd /var/www/ql-thuanchay-vn/app
 git pull
+ls -la docker-compose.yml Dockerfile docker-entrypoint.sh
 docker compose build
 docker compose up -d
 docker compose ps
 ```
+
+Nếu `ls` không thấy `docker-compose.yml` hoặc Compose báo `no configuration file provided: not found`: code trên VPS chưa có bản có Docker — **push từ máy dev** rồi `git pull` lại; chi tiết: `deploy/DOCKER.md` mục *Kiểm tra trước khi build*.
 
 Container lắng nghe **`127.0.0.1:3000`** trên host — **Nginx + domain** giữ như **Phần A0** (proxy tới `127.0.0.1:3000`). Nếu trước đó dùng systemd `ecomtc-wms` + `.deploy`, nên tắt service cũ để tránh xung đột port:
 

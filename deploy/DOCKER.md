@@ -7,6 +7,28 @@
 - Docker Engine **20.10+** và Docker Compose V2 (`docker compose`).
 - Trên VPS Ubuntu: [cài Docker chính thức](https://docs.docker.com/engine/install/ubuntu/).
 
+## Kiểm tra trước khi `docker compose build`
+
+Chạy lệnh Compose **trong thư mục gốc project** (cùng cấp với `package.json`), nơi có `docker-compose.yml` và `Dockerfile`:
+
+```bash
+cd /var/www/ql-thuanchay-vn/app
+pwd
+ls -la docker-compose.yml Dockerfile docker-entrypoint.sh
+```
+
+Nếu **không** thấy `docker-compose.yml`, Docker báo:
+
+`no configuration file provided: not found`
+
+**Cách xử lý:**
+
+1. Trên máy dev: **commit + push** lên Git các file `docker-compose.yml`, `Dockerfile`, `docker-entrypoint.sh`, `.dockerignore`.
+2. Trên VPS: `git pull` (đúng nhánh, ví dụ `main`).
+3. Chạy lại `ls` — đủ file rồi mới `docker compose build`.
+
+Nếu vẫn thiếu file, kiểm tra thư mục clone có phải root repo (đôi khi clone lệch cấp thư mục).
+
 ## Máy dev — build & chạy thử
 
 Trong thư mục gốc repo:
@@ -80,6 +102,7 @@ Thư mục `.deploy` có thể xóa để tiết kiệm dung lượng; Docker kh
 
 | Hiện tượng | Cách xử lý |
 |-------------|------------|
+| `no configuration file provided: not found` | Thiếu `docker-compose.yml` trong thư mục hiện tại — xem mục **Kiểm tra trước khi build** ở trên (`git pull`, đúng thư mục). |
 | Build hết RAM VPS | Build trên máy mạnh rồi `docker save` / `docker load`, hoặc tăng RAM/swap VPS. |
 | 502 từ Nginx | `docker compose ps`, `docker compose logs wms` — container phải `healthy` / Up. |
 | Prisma lỗi quyền | Volume `wms_data` gắn vào `/app/data`; entrypoint đã `chown` user `nextjs`. |
