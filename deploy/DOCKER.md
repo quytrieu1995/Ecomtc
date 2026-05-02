@@ -103,6 +103,7 @@ Thư mục `.deploy` có thể xóa để tiết kiệm dung lượng; Docker kh
 | Hiện tượng | Cách xử lý |
 |-------------|------------|
 | `no configuration file provided: not found` | Thiếu `docker-compose.yml` trong thư mục hiện tại — xem mục **Kiểm tra trước khi build** ở trên (`git pull`, đúng thư mục). |
+| Build fail ở `deps` / `npm ci` hoặc `npm install` (exit code 1) | Thường do **`postinstall` = `prisma generate`** chạy khi chưa có `prisma/` trong image — `Dockerfile` đã `COPY prisma` trước `npm install`. `git pull` rồi build lại. Nếu vẫn lỗi: đồng bộ `package-lock.json` với `package.json` hoặc tạm xóa lock để dùng `npm install`; xem log: `docker compose build --progress=plain --no-cache`. |
 | Build hết RAM VPS | Build trên máy mạnh rồi `docker save` / `docker load`, hoặc tăng RAM/swap VPS. |
 | 502 từ Nginx | `docker compose ps`, `docker compose logs wms` — container phải `healthy` / Up. |
 | Prisma lỗi quyền | Volume `wms_data` gắn vào `/app/data`; entrypoint đã `chown` user `nextjs`. |

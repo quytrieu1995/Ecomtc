@@ -8,6 +8,10 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json* ./
+# postinstall chạy `prisma generate` — cần schema trước khi npm install
+COPY prisma ./prisma/
+ENV npm_config_fund=false
+ENV npm_config_audit=false
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 FROM base AS builder
