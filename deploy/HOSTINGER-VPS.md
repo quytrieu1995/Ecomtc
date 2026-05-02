@@ -4,6 +4,60 @@ Tài liệu này giả định VPS **Ubuntu 22.04 hoặc 24.04**, bạn đăng n
 
 ---
 
+## Phần A0 — Chỉ cấu hình domain `ql.thuanchay.vn` (DNS đã trỏ `148.230.103.227`)
+
+Dùng khi **ứng dụng đã chạy nội bộ** (`curl -sI http://127.0.0.1:3000` có HTTP 200/307) và bạn chỉ cần **Nginx** mở đúng tên miền.
+
+### Bước 1 — Kiểm tra DNS từ VPS
+
+```bash
+dig +short ql.thuanchay.vn A
+# hoặc: getent hosts ql.thuanchay.vn
+```
+
+Kết quả phải là `148.230.103.227`. Nếu chưa đúng, đợi DNS hoặc kiểm tra lại bản ghi **A** (`ql` → IP).
+
+### Bước 2 — Cài Nginx (nếu chưa có)
+
+```bash
+sudo apt update
+sudo apt install -y nginx
+```
+
+### Bước 3 — Gắn site (đường dẫn repo giả định như các phần sau)
+
+```bash
+sudo cp /var/www/ql-thuanchay-vn/app/deploy/nginx-ql.thuanchay.vn.conf /etc/nginx/sites-available/ql.thuanchay.vn
+sudo ln -sf /etc/nginx/sites-available/ql.thuanchay.vn /etc/nginx/sites-enabled/ql.thuanchay.vn
+sudo unlink /etc/nginx/sites-enabled/default 2>/dev/null || true
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Bước 4 — Thử trên VPS và trình duyệt
+
+```bash
+curl -sI -H "Host: ql.thuanchay.vn" http://127.0.0.1 | head -n 5
+```
+
+Trình duyệt mở: **`http://ql.thuanchay.vn`** (phải gõ đúng hostname, không chỉ IP — vì `server_name` là `ql.thuanchay.vn`).
+
+### Bước 5 — HTTPS (sau khi HTTP đã lên)
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d ql.thuanchay.vn
+```
+
+Sau đó dùng **`https://ql.thuanchay.vn`**.
+
+### Nếu vẫn không vào được
+
+- **502 / Bad Gateway:** service Node chưa chạy hoặc sai port — xem Phần G (`ecomtc-wms`, `journalctl`).
+- **Truy cập bằng IP:** có thể ra site mặc định khác — luôn thử bằng **`https://ql.thuanchay.vn`**.
+- **Firewall:** mở HTTP/HTTPS: `sudo ufw allow 'Nginx Full'` (xem Phần J).
+
+---
+
 ## Phần A — Chuẩn bị trước khi vào VPS
 
 ### A1. DNS (Hostinger hoặc nơi quản tên miền)
@@ -324,13 +378,53 @@ sudo ufw status verbose
 
 ## Phần K — Cập nhật bản mới sau này
 
+Chỉ chạy `chown` / `systemctl restart` **sau** khi đã có thư mục `.deploy` (build xong) và đã cài unit systemd (Phần G).
+
 ```bash
 cd /var/www/ql-thuanchay-vn/app
 git pull
 ./deploy/build-standalone.sh
+ls -la .deploy/server.js
 sudo chown -R www-data:www-data .deploy
 sudo systemctl restart ecomtc-wms
 ```
+
+Nếu `ls` báo không có file: build chưa thành công — xem log lỗi ngay trên màn hình sau `./deploy/build-standalone.sh` (thường là `npm run build` / ESLint / hết RAM).
+
+---
+
+## Phần L0 — Hai lỗi bạn vừa gặp
+
+### `chown: cannot access '.deploy': No such file or directory`
+
+Thư mục **`.deploy`** chỉ được tạo khi script **`./deploy/build-standalone.sh`** chạy **hết** và `next build` thành công.
+
+```bash
+cd /var/www/ql-thuanchay-vn/app
+chmod +x deploy/build-standalone.sh
+./deploy/build-standalone.sh
+ls -la .deploy
+```
+
+Khi thấy `.deploy/server.js` thì mới chạy:
+
+```bash
+sudo chown -R www-data:www-data /var/www/ql-thuanchay-vn/app/.deploy
+```
+
+### `Unit ecomtc-wms.service not found`
+
+Service **chưa được đăng ký** với systemd. Làm đủ Phần G (copy file `.service` rồi `daemon-reload` + `enable`). Tóm tắt lệnh:
+
+```bash
+sudo cp /var/www/ql-thuanchay-vn/app/deploy/ecomtc-wms.service /etc/systemd/system/ecomtc-wms.service
+sudo nano /etc/systemd/system/ecomtc-wms.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now ecomtc-wms
+sudo systemctl status ecomtc-wms
+```
+
+Nếu đường dẫn code của bạn **không** phải `/var/www/ql-thuanchay-vn/app`, sửa trong file `.service` các dòng `WorkingDirectory`, `EnvironmentFile`, `ExecStart` cho khớp rồi chạy lại `daemon-reload` và `restart`.
 
 Nếu đổi `schema.prisma`:
 
@@ -345,6 +439,8 @@ sudo systemctl restart ecomtc-wms
 
 | Hiện tượng | Việc nên làm |
 |-------------|----------------|
+| Không có `.deploy` / `chown` lỗi | Chạy `./deploy/build-standalone.sh` xong, kiểm tra `ls .deploy/server.js` (xem Phần L0) |
+| `Unit ecomtc-wms.service not found` | `sudo cp .../deploy/ecomtc-wms.service /etc/systemd/system/`, `daemon-reload`, `enable --now` (xem Phần L0) |
 | `systemctl status` failed | `journalctl -u ecomtc-wms -n 100 --no-pager` |
 | 502 Bad Gateway | App không chạy: kiểm tra `ecomtc-wms`, `curl 127.0.0.1:3000` |
 | 404 / site khác | Kiểm tra `server_name`, `sites-enabled`, `nginx -t` |
