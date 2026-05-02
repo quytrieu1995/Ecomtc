@@ -124,22 +124,19 @@ export const updateTracking = async (orderId: string, trackingNumber: string) =>
   revalidatePath("/orders")
 }
 
+/** Dùng cho `<form action>` — kiểu trả về phải là void (Next.js 15). */
 export const markOrderReturned = async (
   orderId: string,
-  formData?: FormData,
-) => {
+  formData: FormData,
+): Promise<void> => {
   void formData
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: true },
   })
-  if (!order) return { ok: false as const, error: "Không tìm thấy đơn" }
-  if (order.status === OrderStatus.RETURNED) {
-    return { ok: false as const, error: "Đơn đã ở trạng thái hoàn" }
-  }
-  if (order.status === OrderStatus.CANCELLED) {
-    return { ok: false as const, error: "Đơn đã hủy" }
-  }
+  if (!order) return
+  if (order.status === OrderStatus.RETURNED) return
+  if (order.status === OrderStatus.CANCELLED) return
 
   await prisma.$transaction(async (tx) => {
     for (const line of order.items) {
@@ -158,21 +155,22 @@ export const markOrderReturned = async (
   revalidatePath("/products")
   revalidatePath("/dashboard")
   revalidatePath("/reports")
-  return { ok: true as const }
 }
 
-export const cancelOrder = async (orderId: string, formData?: FormData) => {
+/** Dùng cho `<form action>` — kiểu trả về phải là void (Next.js 15). */
+export const cancelOrder = async (
+  orderId: string,
+  formData: FormData,
+): Promise<void> => {
   void formData
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: true },
   })
-  if (!order) return { ok: false as const, error: "Không tìm thấy đơn" }
-  if (order.status === OrderStatus.CANCELLED) {
-    return { ok: false as const, error: "Đơn đã hủy" }
-  }
+  if (!order) return
+  if (order.status === OrderStatus.CANCELLED) return
   if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.RETURNED) {
-    return { ok: false as const, error: "Không thể hủy đơn ở trạng thái này" }
+    return
   }
 
   await prisma.$transaction(async (tx) => {
@@ -192,5 +190,4 @@ export const cancelOrder = async (orderId: string, formData?: FormData) => {
   revalidatePath("/products")
   revalidatePath("/dashboard")
   revalidatePath("/reports")
-  return { ok: true as const }
 }
