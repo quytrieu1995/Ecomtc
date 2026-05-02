@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Cấu hình kết nối Nhanh.vn (một bản ghi)
+model NhanhConfig {
+  id         String   @id @default(cuid())
+  appKey     String
+  businessId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  name             String
+  sku              String           @unique
+  price            Float
+  quantity         Int
+  minStock         Int
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  stockMovements   StockMovement[]
+  orderItems       OrderItem[]
+}
+
+enum MovementType {
+  INBOUND
+  OUTBOUND
+  WRITE_OFF
+}
+
+model StockMovement {
+  id        String       @id @default(cuid())
+  type      MovementType
+  productId String
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  note      String?
+  createdAt DateTime     @default(now())
+}
+
+enum OrderStatus {
+  NEW
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  RETURNED
+  CANCELLED
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  orderCode      String      @unique
+  status         OrderStatus
+  channel        String
+  trackingNumber String?
+  customerName   String?
+  total          Float
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
