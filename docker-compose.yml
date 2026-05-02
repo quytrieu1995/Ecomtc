@@ -1,0 +1,23 @@
+services:
+  wms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecomtc-wms
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/prod.db
+    volumes:
+      - wms_data:/app/data
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:3000/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  wms_data:

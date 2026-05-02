@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Chạy trên máy dev hoặc trên VPS sau khi clone repo (cần Node 20+).
+# Chạy trên máy dev hoặc VPS khi KHÔNG dùng Docker (cần Node 20+).
+# Triển khai bằng container: xem deploy/DOCKER.md và docker compose build.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

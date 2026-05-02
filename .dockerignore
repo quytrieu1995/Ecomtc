@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.github
+*.md
+.env
+.env.*
+!.env.example
+data
+.deploy
+mcps
+.cursor
+*.db
+*.db-journal

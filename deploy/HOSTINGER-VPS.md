@@ -4,6 +4,30 @@ Tài liệu này giả định VPS **Ubuntu 22.04 hoặc 24.04**, bạn đăng n
 
 ---
 
+## Triển khai bằng Docker (khuyến nghị)
+
+Ứng dụng có **`Dockerfile`** + **`docker-compose.yml`** ở thư mục gốc repo. Chi tiết: **`deploy/DOCKER.md`**.
+
+Trên VPS (sau khi [cài Docker Engine](https://docs.docker.com/engine/install/ubuntu/) và plugin Compose):
+
+```bash
+cd /var/www/ql-thuanchay-vn/app
+git pull
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+Container lắng nghe **`127.0.0.1:3000`** trên host — **Nginx + domain** giữ như **Phần A0** (proxy tới `127.0.0.1:3000`). Nếu trước đó dùng systemd `ecomtc-wms` + `.deploy`, nên tắt service cũ để tránh xung đột port:
+
+```bash
+sudo systemctl disable --now ecomtc-wms 2>/dev/null || true
+```
+
+Các phần **C3 Node**, **build standalone**, **systemd Phần G** bên dưới chỉ cần khi bạn **không** dùng Docker.
+
+---
+
 ## Phần A0 — Chỉ cấu hình domain `ql.thuanchay.vn` (DNS đã trỏ `148.230.103.227`)
 
 Dùng khi **ứng dụng đã chạy nội bộ** (`curl -sI http://127.0.0.1:3000` có HTTP 200/307) và bạn chỉ cần **Nginx** mở đúng tên miền.
@@ -52,7 +76,7 @@ Sau đó dùng **`https://ql.thuanchay.vn`**.
 
 ### Nếu vẫn không vào được
 
-- **502 / Bad Gateway:** service Node chưa chạy hoặc sai port — xem Phần G (`ecomtc-wms`, `journalctl`).
+- **502 / Bad Gateway:** với **Docker**: `docker compose ps` và `docker compose logs wms`. Với **systemd**: Phần G (`ecomtc-wms`, `journalctl`).
 - **Truy cập bằng IP:** có thể ra site mặc định khác — luôn thử bằng **`https://ql.thuanchay.vn`**.
 - **Firewall:** mở HTTP/HTTPS: `sudo ufw allow 'Nginx Full'` (xem Phần J).
 
